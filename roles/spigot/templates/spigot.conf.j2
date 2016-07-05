@@ -9,4 +9,4 @@ respawn
 respawn limit 5 60
 
 exec start-stop-daemon --start --chuid {{ app_user }} --chdir {{ app_location }} \
-  --exec {{app_location}}/spigot.jar -- --name Spigot 2>&1 >> /var/log/spigot/spigot.log
+  --exec {{app_location}}/spigot.jar -- --name spigot 2>&1 >> /var/log/spigot/spigot.log
