@@ -1,0 +1,96 @@
+---
+- name: Perform a system upgrade
+  apt:
+    upgrade: yes
+    update-cache: yes
+    cache_valid_time: 0
+  when: upgrade_system
+
+- name: Add the Spigot user
+  user:
+    name: "{{ app_user }}"
+    group: "{{ app_group }}"
+    home: "/home/{{ app_user }}/"
+    shell: /bin/false
+    comment: "Spigot Server User"
+
+- name: Create the Spigot application directories with the correct permissions
+  file:
+    path: "{{ app_location }}{{ item }}"
+    owner: "{{ app_user }}"
+    group: "{{ app_group }}"
+    mode: 0766
+    state: directory
+  with_items:
+    - "/"
+    - "/plugins"
+
+- name: Create the Spigot log directory
+  file:
+    path: /var/log/spigot
+    owner: "{{ app_user }}"
+    group: "{{ app_group }}"
+    mode: 0755
+    state: directory
+
+- name: Build the local jar
+  local_action: "shell java -jar {{ build_tools_path }}/{{ build_tools_name }} --rev {{ spigot_version }}"
+  become: no
+
+- name: Unlock all the sekrits
+  include_vars: sekrits.yml
+
+- name: Install init upstart script
+  template:
+    src: spigot.conf.j2
+    dest: /etc/init/spigot.conf
+
+- name: Sync other MC Configs
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ app_location }}/{{ item.dst }}"
+    owner: "{{ app_user }}"
+    group: "{{ app_group }}"
+    mode: 0655
+  with_items:
+    - { src: eula.txt, dst: eula.txt }
+    - { src: bukkit.yml, dst: bukkit.yml }
+    - { src: ops.json, dst: ops.json }
+    - { src: server.properties, dst: server.properties }
+    - { src: spigot.yml, dst: spigot.yml }
+
+- name: Sync MC Files
+  synchronize:
+    src: "{{ build_tools_path }}"
+    dest: "{{ app_location }}"
+    mode: push
+    rsync_opts:
+      "--exclude=BuildData/"
+      "--exclude=apache-maven*"
+      "--exclude=BuildTools.jar"
+      "--exclude=BuildTools.log.txt"
+      "--exclude=Bukkit/"
+      "--exclude=CraftBukkit/"
+      "--exclude=Spigot/"
+      "--exclude=work/"
+
+- name: Sync the Spigot plugins directory
+  synchronize:
+    src: plugins/
+    dest: "{{ app_location }}/plugins"
+    archive: no
+    recursive: yes
+    mode: push
+  notify: Restart Spigot
+  tags: sync_spigot
+
+- name: Change ownership of Spigot plugins
+  file:
+    path: "{{ app_location }}/"
+    owner: "{{ app_user }}"
+    group: "{{ app_group }}"
+    mode: 0766
+    state: directory
+    recurse: yes
+  notify: Restart Spigot
+  tags: sync_spigot

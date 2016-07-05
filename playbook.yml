@@ -1,0 +1,5 @@
+- name: Spigot Playbook
+  hosts: all
+  become: yes
+  roles:
+    - spigot

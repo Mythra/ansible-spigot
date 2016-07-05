@@ -1,0 +1,7 @@
+---
+build_tools_path: ~/
+build_tools_name: build_tools.jar
+app_user: spigot
+app_group: spigot
+app_location: /opt/spigot
+spigot_version: latest

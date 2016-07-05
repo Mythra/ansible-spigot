@@ -1,0 +1,6 @@
+---
+- name: Restart Spigot
+  service:
+    name: spigot
+    state: restarted
+    enabled: yes
