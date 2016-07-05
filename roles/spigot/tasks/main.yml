@@ -74,6 +74,11 @@
       "--exclude=Spigot/"
       "--exclude=work/"
 
+- name: Rename Spigot Jar
+  command: mv spigot*.jar spigot.jar
+  args:
+    chdir: "{{ app_location }}"
+
 - name: Sync the Spigot plugins directory
   synchronize:
     src: plugins/
